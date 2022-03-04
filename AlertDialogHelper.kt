@@ -37,6 +37,9 @@ fun Context.confirm(title:String,message:String?, positive:String,negative:Strin
 }
 fun Fragment.confirm(title:String,message:String?, positive:String,negative:String,handler:((Boolean)->Unit)? = null) = this.context?.confirm(title,message,positive,negative,handler)
 
+/**
+ * Use with prompt_dialog.xml
+ */
 fun Context.prompt(title:String,message:String?,positive:String,negative:String,inputType:Int,handler:((String)->Unit)? = null){
     LayoutInflater.from(this).also { inflater ->
         val binding = PromptDialogBinding.inflate(inflater,null,false)
