@@ -1,3 +1,15 @@
+/**
+ * 
+ * @author Hugo Visser
+ * @see <a href="http://www.littlerobots.nl/blog/Handle-Android-RecyclerView-Clicks/">
+ * Add the following xml in ids.xml
+ * 
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="item_click_support" type="id" />
+</resources>
+ */
+
 
 import android.view.View
 import androidx.recyclerview.widget.RecyclerView
