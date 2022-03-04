@@ -5,19 +5,56 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.util.*
 
 
-fun Activity.alert(title:String,message:String?,button:String,handler:(()->Unit)? = null){
-    SystemHelper.alert(this,title,message,button,handler)
+fun Context.simplePicker(title: String, options: Array<CharSequence>, handler: ((Int)->Unit)? = null)
+{
+    MaterialAlertDialogBuilder(this)
+            .setTitle(title)
+            .setCancelable(true)
+            .setItems(options) { dialog, which ->
+                handler?.invoke(which)
+            }
+            .show()
 }
-fun Activity.prompt(title:String,message:String?,positive:String,negative:String,inputType:Int,handler:((String)->Unit)? = null){
-    SystemHelper.prompt(this,title,message,positive,negative,inputType,handler)
+fun Fragment.simplePicker(title: String, options: Array<CharSequence>, handler: ((Int)->Unit)? = null) = this.context?.simplePicker(title, options, handler)
+
+fun Context.alert(title:String, message:String?, button:String, handler:(()->Unit)? = null) {
+    MaterialAlertDialogBuilder(this)
+            .setTitle(title)
+            .setMessage(message)
+            .setPositiveButton(button) { _, _ -> handler?.invoke() }
+            .show()
 }
-fun Activity.confirm(title:String,message:String?, positive:String,negative:String,handler:((Boolean)->Unit)? = null){
-    SystemHelper.confirm(this,title,message,positive,negative,handler)
+
+fun Fragment.alert(title:String, message:String?, button:String, handler:(()->Unit)? = null) = this.context?.alert(title,message,button,handler)
+
+fun Context.confirm(title:String,message:String?, positive:String,negative:String,handler:((Boolean)->Unit)? = null) {
+    MaterialAlertDialogBuilder(this)
+            .setTitle(title)
+            .setMessage(message)
+            .setPositiveButton(positive) { _, _ -> handler?.invoke(true) }
+            .setNegativeButton(negative) { _, _ -> handler?.invoke(false) }
+            .show()
 }
-fun Activity.picker(title: String, positive: String, negative: String, options: Array<CharSequence>, selected: Int, handler: ((Int)->Unit)? = null){
-    SystemHelper.picker(this,title,positive,negative,options,selected,handler)
+fun Fragment.confirm(title:String,message:String?, positive:String,negative:String,handler:((Boolean)->Unit)? = null) = this.context?.confirm(title,message,positive,negative,handler)
+
+fun Context.prompt(title:String,message:String?,positive:String,negative:String,inputType:Int,handler:((String)->Unit)? = null){
+    LayoutInflater.from(this).also { inflater ->
+        val binding = PromptDialogBinding.inflate(inflater,null,false)
+        val v = binding.root
+        binding.textField.editText?.inputType = inputType
+        MaterialAlertDialogBuilder(this)
+            .setTitle(title)
+            .setMessage(message)
+            .setView(v)
+            .setPositiveButton(positive) { _, _ -> handler?.invoke(binding.textField.editText?.text?.toString() ?: "") }
+            .setNegativeButton(negative) { _, _ ->  }
+            .show()
+
+    }
 }
-fun Activity.checker(title: String, positive: String, negative: String, options: Array<CharSequence>, selected: BooleanArray, handler: ((BooleanArray) -> Unit)? = null){
+fun Fragment.prompt(title:String,message:String?,positive:String,negative:String,inputType:Int,handler:((String)->Unit)? = null) = this.context?.prompt(title,message,positive,negative,inputType,handler)
+
+fun Context.checker(title: String, positive: String, negative: String, options: Array<CharSequence>, selected: BooleanArray, handler: ((BooleanArray) -> Unit)? = null){
 
     MaterialAlertDialogBuilder(this).setTitle(title)
             .setMultiChoiceItems(options,selected){ dialog: DialogInterface?, which: Int, isChecked: Boolean ->
@@ -29,33 +66,4 @@ fun Activity.checker(title: String, positive: String, negative: String, options:
                 handler?.invoke(selected)
             }.create().show()
 }
-fun Activity.simplePicker(title: String, options: Array<CharSequence>, handler: ((Int)->Unit)? = null)
-{
-    MaterialAlertDialogBuilder(this)
-            .setTitle(title)
-            .setItems(options) { dialog, which ->
-                handler?.invoke(which)
-            }
-            .show()
-}
-
-
-fun androidx.fragment.app.Fragment.alert(title:String, message:String?, button:String, handler:(()->Unit)? = null){
-    this.activity?.alert(title,message,button,handler)
-}
-fun androidx.fragment.app.Fragment.prompt(title:String, message:String?, positive:String, negative:String, inputType:Int, handler:((String)->Unit)? = null){
-    this.activity?.prompt(title,message,positive,negative,inputType,handler)
-}
-fun androidx.fragment.app.Fragment.confirm(title:String, message:String?, positive:String, negative:String, handler:((Boolean)->Unit)? = null) {
-    this.activity?.confirm(title,message,positive,negative,handler)
-}
-fun androidx.fragment.app.Fragment.picker(title: String, positive: String, negative: String, options: Array<CharSequence>, selected: Int, handler: ((Int)->Unit)? = null) {
-    this.activity?.picker(title,positive,negative,options,selected,handler)
-}
-fun androidx.fragment.app.Fragment.checker(title: String, positive: String, negative: String, options: Array<CharSequence>, selected: BooleanArray, handler: ((BooleanArray) -> Unit)? = null){
-    this.activity?.checker(title,positive,negative,options,selected,handler)
-}
-fun androidx.fragment.app.Fragment.simplePicker(title: String, options: Array<CharSequence>, handler: ((Int)->Unit)? = null)
-{
-    this.activity?.simplePicker(title,options,handler)
-}
+fun Fragment.checker(title: String, positive: String, negative: String, options: Array<CharSequence>, selected: BooleanArray, handler: ((BooleanArray) -> Unit)? = null) = this.context?.checker(title,positive,negative,options,selected,handler)
