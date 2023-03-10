@@ -2,7 +2,7 @@ actor TaskQueue{
     private class PendingTask{
         let tag:String?
         
-        init(tag: String?) {
+        init(tag: String? = nil) {
             self.tag = tag
         }
     }
@@ -61,7 +61,7 @@ actor TaskQueue{
                     }
                     catch
                     {
-                        log.error("AsyncTask \(pendingTask.tag ?? "") error \(error)",source: tag)
+//                        log.error("AsyncTask \(pendingTask.tag ?? "") error \(error)",source: tag)
                         task.continuation?.resume(throwing: error)
                     }
                 }
@@ -80,21 +80,21 @@ actor TaskQueue{
                     }
                     catch
                     {
-                        log.error("StreamTask \(pendingTask.tag ?? "") error \(error)",source: tag)
+//                        log.error("StreamTask \(pendingTask.tag ?? "") error \(error)",source: tag)
                         task.continuation.finish(throwing: error)
                     }
                     
                 }
                 else
                 {
-                    log.debug("PendingTask discard \(pendingTask)",source: tag)
+//                    log.debug("PendingTask discard \(pendingTask)",source: tag)
                 }
                 if(Task.isCancelled){ break }
             }
         }
     }
     
-    init(tag: String?) {
+    init(tag: String? = nil) {
         self.tag = tag ?? "TaskQueue"
         Task{
             await initPendingTasks()
@@ -107,6 +107,13 @@ actor TaskQueue{
         if(scope?.isCancelled == false)
         {
             scope?.cancel()
+        }
+    }
+    
+    nonisolated func dispatch(tag:String?=nil,block: @escaping () async throws -> Void)
+    {
+        Task{
+            await pendingTasksContinuation?.yield(AsyncTask(tag: tag, continuation: nil, block: block))
         }
     }
     
