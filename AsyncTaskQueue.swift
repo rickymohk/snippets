@@ -1,6 +1,7 @@
 actor TaskQueue{
     private class PendingTask{
         let tag:String?
+        
         init(tag: String?) {
             self.tag = tag
         }
@@ -48,19 +49,19 @@ actor TaskQueue{
             guard let pendingTasks = pendingTasks else { return }
             for await pendingTask in pendingTasks
             {
-                log.debug("PendingTask \(pendingTask.tag ?? "") received",source: tag)
+//                log.debug("PendingTask \(pendingTask.tag ?? "") received",source: tag)
                 if(Task.isCancelled){ break }
                 if let task = pendingTask as? AsyncTask
                 {
                     do{
-                        log.debug("AsyncTask \(pendingTask.tag ?? "") start",source: tag)
+//                        log.debug("AsyncTask \(pendingTask.tag ?? "") start",source: tag)
                         let result = try await task.block()
-                        log.debug("AsyncTask \(pendingTask.tag ?? "") resume",source: tag)
+//                        log.debug("AsyncTask \(pendingTask.tag ?? "") resume",source: tag)
                         task.continuation?.resume(returning: result)
                     }
                     catch
                     {
-                        log.debug("AsyncTask \(pendingTask.tag ?? "") error \(error)",source: tag)
+                        log.error("AsyncTask \(pendingTask.tag ?? "") error \(error)",source: tag)
                         task.continuation?.resume(throwing: error)
                     }
                 }
@@ -68,18 +69,18 @@ actor TaskQueue{
                 {
                     do
                     {
-                        log.debug("StreamTask \(pendingTask.tag ?? "") start",source: tag)
+//                        log.debug("StreamTask \(pendingTask.tag ?? "") start",source: tag)
                         for try await value in AsyncThrowingStream(Any.self, task.block)
                         {
-                            log.debug("StreamTask \(pendingTask.tag ?? "") yield",source: tag)
+//                            log.debug("StreamTask \(pendingTask.tag ?? "") yield",source: tag)
                             task.continuation.yield(value)
                         }
-                        log.debug("StreamTask \(pendingTask.tag ?? "") finish",source: tag)
+//                        log.debug("StreamTask \(pendingTask.tag ?? "") finish",source: tag)
                         task.continuation.finish()
                     }
                     catch
                     {
-                        log.debug("StreamTask \(pendingTask.tag ?? "") error \(error)",source: tag)
+                        log.error("StreamTask \(pendingTask.tag ?? "") error \(error)",source: tag)
                         task.continuation.finish(throwing: error)
                     }
                     
@@ -101,11 +102,6 @@ actor TaskQueue{
         }
     }
     
-    private func setBlocksContinuation(continuation: AsyncStream<PendingTask>.Continuation)
-    {
-        pendingTasksContinuation = continuation
-    }
-    
     func close()
     {
         if(scope?.isCancelled == false)
@@ -114,7 +110,7 @@ actor TaskQueue{
         }
     }
     
-    func dispatchAndWait<T>(tag:String?=nil,block: @escaping () async throws -> T) async throws -> T
+    func dispatch<T>(tag:String?=nil,block: @escaping () async throws -> T) async throws -> T
     {
         return (try await withCheckedThrowingContinuation({ continuation in
             pendingTasksContinuation?.yield(AsyncTask(tag: tag, continuation: continuation, block: block))
