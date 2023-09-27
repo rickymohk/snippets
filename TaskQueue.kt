@@ -11,7 +11,7 @@ import kotlin.coroutines.suspendCoroutine
 import kotlin.coroutines.resumeWithException
 
 
-internal class TaskQueue(private val tag:String? = null) : java.io.Closeable{
+class TaskQueue(private val tag:String? = null) : java.io.Closeable{
 
     private val coroutineScope = CoroutineScope(Dispatchers.Default)
 
@@ -19,7 +19,7 @@ internal class TaskQueue(private val tag:String? = null) : java.io.Closeable{
 
     private open class Task(val tag:String?)
     private class SuspendTask(tag:String?, val block: suspend () -> Any?, val continuation: Continuation<Any?>?) : Task(tag)
-    private class ChannelFlowTask(tag:String?,val capacity: Int, val block: suspend (ProducerScope<Any>) -> Unit, val producerScope: ProducerScope<Any>) : Task(tag)
+    private class ChannelFlowTask(tag:String?,val capacity: Int, val block: suspend ProducerScope<Any>.() -> Unit, val producerScope: ProducerScope<Any>) : Task(tag)
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val blocks = Channel<Task>().apply {
@@ -104,9 +104,9 @@ internal class TaskQueue(private val tag:String? = null) : java.io.Closeable{
         addBlock(tag,block, continuation as Continuation<Any?>)
     }
 
-    fun<T> dispatchChannelFlow(tag:String? = null,capacity:Int = 0, block: suspend (ProducerScope<T>)->Unit) = channelFlow<T> {
+    fun<T> dispatchChannelFlow(tag:String? = null,capacity:Int = 0, block: suspend ProducerScope<T>.()->Unit) = channelFlow<T> {
         Log.d(tag,"dispatchChannelFlow $tag")
-        blocks.send(ChannelFlowTask(tag,capacity, block as (suspend (ProducerScope<Any>)->Unit) ,this as ProducerScope<Any>))
+        blocks.send(ChannelFlowTask(tag,capacity, block as (suspend ProducerScope<Any>.()->Unit) ,this as ProducerScope<Any>))
         awaitClose {
             Log.d(tag,"dispatchChannelFlow $tag closed")
         }
